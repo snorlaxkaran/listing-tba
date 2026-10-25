@@ -1,0 +1,56 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { storeImage } from "@/lib/storage";
+import { serializeRow } from "@/lib/sku-row";
+
+type Params = { params: Promise<{ id: string; rowId: string }> };
+
+export async function POST(request: Request, { params }: Params) {
+  const { id: collectionId, rowId } = await params;
+  const row = await prisma.skuRow.findFirst({
+    where: { id: rowId, collectionId },
+  });
+  if (!row) {
+    return NextResponse.json({ error: "Row not found" }, { status: 404 });
+  }
+
+  const form = await request.formData();
+  const kind = String(form.get("kind") ?? "");
+  const file = form.get("file");
+
+  if (kind !== "whiteBg" && kind !== "model") {
+    return NextResponse.json({ error: "Invalid image kind" }, { status: 400 });
+  }
+  if (!(file instanceof File) || file.size === 0) {
+    return NextResponse.json({ error: "Image file is required" }, { status: 400 });
+  }
+  if (kind === "whiteBg" && !row.hasWhiteBgImages) {
+    return NextResponse.json(
+      { error: "Enable white background images for this SKU first" },
+      { status: 400 },
+    );
+  }
+  if (kind === "model" && !row.hasModelImages) {
+    return NextResponse.json(
+      { error: "Enable model images for this SKU first" },
+      { status: 400 },
+    );
+  }
+
+  const key = `${collectionId}/${rowId}/${kind}-${Date.now()}`;
+  const url = await storeImage(file, key);
+
+  const updated = await prisma.skuRow.update({
+    where: { id: rowId },
+    data:
+      kind === "whiteBg"
+        ? { whiteBgImageUrl: url }
+        : { modelImageUrl: url },
+  });
+  await prisma.collection.update({
+    where: { id: collectionId },
+    data: { updatedAt: new Date() },
+  });
+
+  return NextResponse.json(serializeRow(updated));
+}

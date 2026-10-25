@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Collection {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rows      SkuRow[]
+}
+
+model SkuRow {
+  id                   String     @id @default(cuid())
+  collectionId         String
+  collection           Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  sku                  String
+  samplesReceived      Int        @default(0)
+  givenToPhotoshoot    Int        @default(0)
+  factoryStock         Int        @default(0)
+  hasWhiteBgImages     Boolean    @default(false)
+  whiteBgImageUrl      String?
+  hasModelImages       Boolean    @default(false)
+  modelImageUrl        String?
+  isLiveOnWebsite      Boolean    @default(false)
+  notLiveReason        String?
+  sortOrder            Int        @default(0)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@index([collectionId])
+}
