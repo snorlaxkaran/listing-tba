@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { sheetInputClass, sheetTableClass } from "@/components/sheet-styles";
+import { uploadListingImageClient } from "@/lib/supabase/storage-client";
 
 export type SheetRow = {
   id: string;
@@ -110,16 +111,45 @@ export function CollectionSheet({
   const uploadImage = useCallback(
     async (rowId: string, kind: "whiteBg" | "model", file: File) => {
       setError(null);
-      const form = new FormData();
-      form.set("kind", kind);
-      form.set("file", file);
+      const ext = file.name.includes(".")
+        ? file.name.split(".").pop()!
+        : "jpg";
+      const objectPath = `${collectionId}/${rowId}/${kind}-${Date.now()}.${ext}`;
+
+      let publicUrl: string;
+      try {
+        publicUrl = await uploadListingImageClient(file, objectPath);
+      } catch (clientErr) {
+        const form = new FormData();
+        form.set("kind", kind);
+        form.set("file", file);
+        const fallback = await fetch(
+          `/api/collections/${collectionId}/rows/${rowId}/upload`,
+          { method: "POST", body: form },
+        );
+        if (!fallback.ok) {
+          const data = await fallback.json().catch(() => ({}));
+          const msg =
+            data.error ??
+            (clientErr instanceof Error ? clientErr.message : "Upload failed");
+          throw new Error(msg);
+        }
+        const updated = (await fallback.json()) as SheetRow;
+        setRows((prev) => prev.map((r) => (r.id === rowId ? updated : r)));
+        return;
+      }
+
       const res = await fetch(
         `/api/collections/${collectionId}/rows/${rowId}/upload`,
-        { method: "POST", body: form },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind, publicUrl }),
+        },
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Upload failed");
+        throw new Error(data.error ?? "Could not save image URL");
       }
       const updated = (await res.json()) as SheetRow;
       setRows((prev) => prev.map((r) => (r.id === rowId ? updated : r)));

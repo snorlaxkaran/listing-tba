@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import { LISTING_IMAGES_BUCKET } from "@/lib/supabase/constants";
 
-export const LISTING_IMAGES_BUCKET = "listing-images";
+export { LISTING_IMAGES_BUCKET };
 
 export function createSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

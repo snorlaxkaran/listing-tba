@@ -1,10 +1,8 @@
 import { put } from "@vercel/blob";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import {
-  createSupabaseAdmin,
-  LISTING_IMAGES_BUCKET,
-} from "@/lib/supabase/admin";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { LISTING_IMAGES_BUCKET } from "@/lib/supabase/constants";
 
 const MAX_BYTES = 12 * 1024 * 1024;
 
