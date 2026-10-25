@@ -36,12 +36,24 @@ export function ExcelImportForm() {
       try {
         data = text ? JSON.parse(text) : {};
       } catch {
+        const timeoutHint =
+          res.status === 504
+            ? " The server took too long — try again after deploy, or split the file into smaller sheets."
+            : "";
         throw new Error(
-          res.ok ? "Import finished but response was invalid." : `Import failed (${res.status}).`,
+          res.ok
+            ? "Import finished but response was invalid."
+            : `Import failed (${res.status}).${timeoutHint}`,
         );
       }
       if (!res.ok) {
-        throw new Error(String(data.error ?? `Import failed (${res.status}).`));
+        const timeoutHint =
+          res.status === 504
+            ? " The server took too long — try again after deploy, or split the file into smaller sheets."
+            : "";
+        throw new Error(
+          String(data.error ?? `Import failed (${res.status}).${timeoutHint}`),
+        );
       }
       setMessage(
         `Imported ${data.rowsProcessed} row(s): ${data.createdRows} new SKU(s), ${data.updatedRows} updated, ${data.createdCollections} new collection(s).`,
