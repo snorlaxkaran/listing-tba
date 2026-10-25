@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { sheetInputClass } from "@/components/sheet-styles";
 import {
   defaultSheetFilters,
+  type QuickFilter,
   type SheetFilterState,
   sheetFiltersActive,
   type SkuSort,
@@ -73,6 +75,29 @@ export function SheetFiltersBar({
   totalCount,
 }: Props) {
   const active = sheetFiltersActive(filters);
+  const [skuDraft, setSkuDraft] = useState(filters.skuSearch);
+
+  useEffect(() => {
+    setSkuDraft(filters.skuSearch);
+  }, [filters.skuSearch]);
+
+  function toggleQuickFilter(key: QuickFilter) {
+    onChange({
+      ...filters,
+      quickFilter: filters.quickFilter === key ? "none" : key,
+    });
+  }
+
+  function applySkuSearch() {
+    onChange({ ...filters, skuSearch: skuDraft.trim() });
+  }
+
+  const quickBtnClass = (key: QuickFilter) =>
+    `cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+      filters.quickFilter === key
+        ? "border-amber-500 bg-amber-50 text-amber-950"
+        : "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
+    }`;
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
@@ -82,6 +107,65 @@ export function SheetFiltersBar({
           Showing <strong className="text-zinc-800">{visibleCount}</strong> of{" "}
           {totalCount} SKU{totalCount === 1 ? "" : "s"}
         </p>
+      </div>
+
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <label className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+            Search SKU
+          </span>
+          <input
+            type="search"
+            value={skuDraft}
+            placeholder="e.g. TSNP0013"
+            className={`${sheetInputClass} font-mono py-1 text-[12px]`}
+            onChange={(e) => setSkuDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                applySkuSearch();
+              }
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={applySkuSearch}
+          className="cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:shrink-0"
+        >
+          Search
+        </button>
+        {filters.skuSearch && (
+          <button
+            type="button"
+            onClick={() => {
+              setSkuDraft("");
+              onChange({ ...filters, skuSearch: "" });
+            }}
+            className="cursor-pointer text-xs font-medium text-zinc-600 hover:text-zinc-900 sm:pb-2"
+          >
+            Clear search
+          </button>
+        )}
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={quickBtnClass("stockNoSamples")}
+          onClick={() => toggleQuickFilter("stockNoSamples")}
+          title="Factory stock &gt; 0 but samples received is 0"
+        >
+          Stock but no samples
+        </button>
+        <button
+          type="button"
+          className={quickBtnClass("liveNoWhiteBg")}
+          onClick={() => toggleQuickFilter("liveNoWhiteBg")}
+          title="Live on website but white BG images not marked received"
+        >
+          Live but no white BG images
+        </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
