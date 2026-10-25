@@ -9,7 +9,8 @@ export type SheetRow = {
   id: string;
   sku: string;
   samplesReceived: number;
-  givenToPhotoshoot: number;
+  givenForWhiteBgShoot: number;
+  givenForModelShoot: number;
   factoryStock: number;
   hasWhiteBgImages: boolean;
   whiteBgImageUrl: string | null;
@@ -143,11 +144,12 @@ export function CollectionSheet({
   const totals = rows.reduce(
     (acc, r) => {
       acc.samples += r.samplesReceived;
-      acc.photoshoot += r.givenToPhotoshoot;
+      acc.whiteShoot += r.givenForWhiteBgShoot;
+      acc.modelShoot += r.givenForModelShoot;
       acc.stock += r.factoryStock;
       return acc;
     },
-    { samples: 0, photoshoot: 0, stock: 0 },
+    { samples: 0, whiteShoot: 0, modelShoot: 0, stock: 0 },
   );
 
   return (
@@ -161,8 +163,9 @@ export function CollectionSheet({
             {collectionName}
           </h1>
           <p className="mt-0.5 text-xs text-zinc-600">
-            {rows.length} SKUs · {totals.samples} samples · {totals.photoshoot}{" "}
-            photoshoot · {totals.stock} stock
+            {rows.length} SKUs · {totals.samples} samples · {totals.whiteShoot}{" "}
+            pcs white shoot · {totals.modelShoot} pcs model shoot ·{" "}
+            {totals.stock} stock
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -191,15 +194,18 @@ export function CollectionSheet({
       )}
 
       <div className="overflow-auto rounded border border-zinc-300 bg-white shadow-sm max-h-[calc(100vh-10rem)]">
-        <table className={sheetTableClass}>
+        <table className={`${sheetTableClass} min-w-[1200px]`}>
           <thead className="sticky top-0 z-10 border-b border-zinc-300 bg-zinc-100 text-[11px] font-semibold uppercase tracking-wide text-zinc-700">
             <tr>
               <th className="border-r border-zinc-200 px-2 py-2">SKU</th>
               <th className="border-r border-zinc-200 px-2 py-2 w-20">Samples</th>
-              <th className="border-r border-zinc-200 px-2 py-2 w-20">Shoot</th>
+              <th className="border-r border-zinc-200 px-2 py-2 w-40">
+                White BG shoot
+              </th>
+              <th className="border-r border-zinc-200 px-2 py-2 w-40">
+                Model shoot
+              </th>
               <th className="border-r border-zinc-200 px-2 py-2 w-20">Stock</th>
-              <th className="border-r border-zinc-200 px-2 py-2 w-36">White BG</th>
-              <th className="border-r border-zinc-200 px-2 py-2 w-36">Model</th>
               <th className="border-r border-zinc-200 px-2 py-2 w-16">Live</th>
               <th className="border-r border-zinc-200 px-2 py-2 min-w-[140px]">
                 Not live
@@ -221,7 +227,7 @@ export function CollectionSheet({
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   className="px-3 py-8 text-center text-zinc-600"
                 >
                   No rows yet. Click <strong>+ Row</strong> to start.
@@ -305,9 +311,29 @@ function SheetRowEditor({
         />
       </td>
       <td className="border-r border-zinc-100 px-1 py-0.5">
-        <NumInput
-          value={draft.givenToPhotoshoot}
-          onCommit={(v) => commit({ givenToPhotoshoot: v })}
+        <ShootCell
+          pieces={draft.givenForWhiteBgShoot}
+          onPieces={(v) => commit({ givenForWhiteBgShoot: v })}
+          piecesLabel="Pcs given"
+          hasImages={draft.hasWhiteBgImages}
+          onHasImages={(v) => commit({ hasWhiteBgImages: v })}
+          imageUrl={draft.whiteBgImageUrl}
+          uploading={uploading === "whiteBg"}
+          onFile={(f) => handleUpload("whiteBg", f)}
+          dropLabel="White BG image"
+        />
+      </td>
+      <td className="border-r border-zinc-100 px-1 py-0.5">
+        <ShootCell
+          pieces={draft.givenForModelShoot}
+          onPieces={(v) => commit({ givenForModelShoot: v })}
+          piecesLabel="Pcs given"
+          hasImages={draft.hasModelImages}
+          onHasImages={(v) => commit({ hasModelImages: v })}
+          imageUrl={draft.modelImageUrl}
+          uploading={uploading === "model"}
+          onFile={(f) => handleUpload("model", f)}
+          dropLabel="Model image"
         />
       </td>
       <td className="border-r border-zinc-100 px-1 py-0.5">
@@ -315,34 +341,6 @@ function SheetRowEditor({
           value={draft.factoryStock}
           onCommit={(v) => commit({ factoryStock: v })}
         />
-      </td>
-      <td className="border-r border-zinc-100 px-1 py-0.5">
-        <Toggle
-          checked={draft.hasWhiteBgImages}
-          onChange={(v) => commit({ hasWhiteBgImages: v })}
-        />
-        {draft.hasWhiteBgImages && (
-          <ImageDropzone
-            url={draft.whiteBgImageUrl}
-            disabled={uploading === "whiteBg"}
-            label="White BG"
-            onFile={(f) => handleUpload("whiteBg", f)}
-          />
-        )}
-      </td>
-      <td className="border-r border-zinc-100 px-1 py-0.5">
-        <Toggle
-          checked={draft.hasModelImages}
-          onChange={(v) => commit({ hasModelImages: v })}
-        />
-        {draft.hasModelImages && (
-          <ImageDropzone
-            url={draft.modelImageUrl}
-            disabled={uploading === "model"}
-            label="Model"
-            onFile={(f) => handleUpload("model", f)}
-          />
-        )}
       </td>
       <td className="border-r border-zinc-100 px-1 py-1">
         <Toggle
@@ -384,6 +382,49 @@ function SheetRowEditor({
         </button>
       </td>
     </tr>
+  );
+}
+
+function ShootCell({
+  pieces,
+  onPieces,
+  piecesLabel,
+  hasImages,
+  onHasImages,
+  imageUrl,
+  uploading,
+  onFile,
+  dropLabel,
+}: {
+  pieces: number;
+  onPieces: (v: number) => void;
+  piecesLabel: string;
+  hasImages: boolean;
+  onHasImages: (v: boolean) => void;
+  imageUrl: string | null;
+  uploading: boolean;
+  onFile: (f: File) => void | Promise<void>;
+  dropLabel: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-medium text-zinc-600">
+        {piecesLabel}
+        <NumInput value={pieces} onCommit={onPieces} />
+      </label>
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[10px] text-zinc-600">Image received</span>
+        <Toggle checked={hasImages} onChange={onHasImages} />
+      </div>
+      {hasImages && (
+        <ImageDropzone
+          url={imageUrl}
+          disabled={uploading}
+          label={dropLabel}
+          onFile={onFile}
+        />
+      )}
+    </div>
   );
 }
 

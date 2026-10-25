@@ -3,7 +3,8 @@ import type { SkuRow } from "@prisma/client";
 export type SkuRowInput = {
   sku: string;
   samplesReceived: number;
-  givenToPhotoshoot: number;
+  givenForWhiteBgShoot: number;
+  givenForModelShoot: number;
   factoryStock: number;
   hasWhiteBgImages: boolean;
   hasModelImages: boolean;
@@ -15,7 +16,8 @@ export function parseSkuRowBody(body: Record<string, unknown>): SkuRowInput {
   return {
     sku: String(body.sku ?? "").trim(),
     samplesReceived: clampInt(body.samplesReceived, 0),
-    givenToPhotoshoot: clampInt(body.givenToPhotoshoot, 0),
+    givenForWhiteBgShoot: clampInt(body.givenForWhiteBgShoot, 0),
+    givenForModelShoot: clampInt(body.givenForModelShoot, 0),
     factoryStock: clampInt(body.factoryStock, 0),
     hasWhiteBgImages: Boolean(body.hasWhiteBgImages),
     hasModelImages: Boolean(body.hasModelImages),
@@ -38,7 +40,8 @@ export function serializeRow(row: SkuRow) {
     id: row.id,
     sku: row.sku,
     samplesReceived: row.samplesReceived,
-    givenToPhotoshoot: row.givenToPhotoshoot,
+    givenForWhiteBgShoot: row.givenForWhiteBgShoot,
+    givenForModelShoot: row.givenForModelShoot,
     factoryStock: row.factoryStock,
     hasWhiteBgImages: row.hasWhiteBgImages,
     whiteBgImageUrl: row.whiteBgImageUrl,

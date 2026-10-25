@@ -31,11 +31,20 @@ export async function buildCollectionWorkbook(
   sheet.columns = [
     { header: "SKU", key: "sku", width: 18 },
     { header: "Samples received", key: "samplesReceived", width: 16 },
-    { header: "Given to photoshoot", key: "givenToPhotoshoot", width: 20 },
+    {
+      header: "Pcs given — white BG shoot",
+      key: "givenForWhiteBgShoot",
+      width: 22,
+    },
+    {
+      header: "Pcs given — model shoot",
+      key: "givenForModelShoot",
+      width: 22,
+    },
     { header: "Factory stock", key: "factoryStock", width: 14 },
-    { header: "White BG images", key: "hasWhiteBgImages", width: 16 },
+    { header: "White BG image received", key: "hasWhiteBgImages", width: 18 },
     { header: "White BG preview", key: "whiteBgPreview", width: IMAGE_COL_WIDTH },
-    { header: "Model images", key: "hasModelImages", width: 14 },
+    { header: "Model image received", key: "hasModelImages", width: 18 },
     { header: "Model preview", key: "modelPreview", width: IMAGE_COL_WIDTH },
     { header: "Live on website", key: "isLiveOnWebsite", width: 16 },
     { header: "Not live reason", key: "notLiveReason", width: 28 },
@@ -51,7 +60,8 @@ export async function buildCollectionWorkbook(
     sheet.addRow({
       sku: row.sku,
       samplesReceived: row.samplesReceived,
-      givenToPhotoshoot: row.givenToPhotoshoot,
+      givenForWhiteBgShoot: row.givenForWhiteBgShoot,
+      givenForModelShoot: row.givenForModelShoot,
       factoryStock: row.factoryStock,
       hasWhiteBgImages: row.hasWhiteBgImages ? "Yes" : "No",
       hasModelImages: row.hasModelImages ? "Yes" : "No",
@@ -69,7 +79,7 @@ export async function buildCollectionWorkbook(
           extension: "jpeg",
         });
         sheet.addImage(imageId, {
-          tl: { col: 5, row: excelRowIndex - 1 },
+          tl: { col: 6, row: excelRowIndex - 1 },
           ext: { width: 110, height: 95 },
         });
       }
@@ -83,7 +93,7 @@ export async function buildCollectionWorkbook(
           extension: "jpeg",
         });
         sheet.addImage(imageId, {
-          tl: { col: 7, row: excelRowIndex - 1 },
+          tl: { col: 8, row: excelRowIndex - 1 },
           ext: { width: 110, height: 95 },
         });
       }
