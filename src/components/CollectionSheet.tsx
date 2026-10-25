@@ -4,26 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import { DeleteCollectionButton } from "@/components/DeleteCollectionButton";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { SheetDashboard } from "@/components/SheetDashboard";
+import { SheetFiltersBar } from "@/components/SheetFiltersBar";
 import { sheetInputClass, sheetTableClass } from "@/components/sheet-styles";
+import {
+  applySheetFilters,
+  defaultSheetFilters,
+  type SheetFilterState,
+} from "@/lib/sheet-filters";
 import { computeSheetStats } from "@/lib/sheet-stats";
+import type { SheetRow } from "@/lib/sku-row";
 import { uploadListingImageClient } from "@/lib/supabase/storage-client";
 
-export type SheetRow = {
-  id: string;
-  sku: string;
-  samplesReceived: number;
-  factoryStock: number;
-  whiteBgWithPhotoshoot: boolean;
-  whiteBgPieceReturned: boolean;
-  modelWithPhotoshoot: boolean;
-  modelPieceReturned: boolean;
-  hasWhiteBgImages: boolean;
-  whiteBgImageUrl: string | null;
-  hasModelImages: boolean;
-  modelImageUrl: string | null;
-  isLiveOnWebsite: boolean;
-  notLiveReason: string | null;
-};
+export type { SheetRow };
 
 type Props = {
   collectionId: string;
@@ -37,8 +29,11 @@ export function CollectionSheet({
   initialRows,
 }: Props) {
   const [rows, setRows] = useState<SheetRow[]>(initialRows);
+  const [filters, setFilters] = useState<SheetFilterState>(defaultSheetFilters);
   const [error, setError] = useState<string | null>(null);
   const [addingRow, setAddingRow] = useState(false);
+
+  const visibleRows = applySheetFilters(rows, filters);
 
   const patchRow = useCallback(
     async (rowId: string, patch: Partial<SheetRow>) => {
@@ -146,7 +141,7 @@ export function CollectionSheet({
     window.location.href = `/api/collections/${collectionId}/export`;
   }
 
-  const stats = computeSheetStats(rows);
+  const stats = computeSheetStats(visibleRows);
 
   return (
     <div className="space-y-4">
@@ -184,6 +179,13 @@ export function CollectionSheet({
         </div>
       </header>
 
+      <SheetFiltersBar
+        filters={filters}
+        onChange={setFilters}
+        visibleCount={visibleRows.length}
+        totalCount={rows.length}
+      />
+
       <SheetDashboard stats={stats} title={`${collectionName} — overview`} />
 
       {error && (
@@ -213,7 +215,7 @@ export function CollectionSheet({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {visibleRows.map((row) => (
               <SheetRowEditor
                 key={row.id}
                 row={row}
@@ -230,6 +232,23 @@ export function CollectionSheet({
                   className="px-3 py-8 text-center text-zinc-600"
                 >
                   No rows yet. Click <strong>+ Row</strong> to start.
+                </td>
+              </tr>
+            )}
+            {rows.length > 0 && visibleRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="px-3 py-8 text-center text-zinc-600"
+                >
+                  No SKUs match these filters.{" "}
+                  <button
+                    type="button"
+                    className="cursor-pointer font-medium text-blue-700 hover:underline"
+                    onClick={() => setFilters(defaultSheetFilters)}
+                  >
+                    Clear filters
+                  </button>
                 </td>
               </tr>
             )}

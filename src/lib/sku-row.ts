@@ -66,7 +66,24 @@ function clampInt(value: unknown, fallback: number): number {
   return Math.floor(n);
 }
 
-export function serializeRow(row: SkuRow) {
+export type SheetRow = {
+  id: string;
+  sku: string;
+  samplesReceived: number;
+  factoryStock: number;
+  whiteBgWithPhotoshoot: boolean;
+  whiteBgPieceReturned: boolean;
+  modelWithPhotoshoot: boolean;
+  modelPieceReturned: boolean;
+  hasWhiteBgImages: boolean;
+  whiteBgImageUrl: string | null;
+  hasModelImages: boolean;
+  modelImageUrl: string | null;
+  isLiveOnWebsite: boolean;
+  notLiveReason: string | null;
+};
+
+export function serializeRow(row: SkuRow): SheetRow {
   return {
     id: row.id,
     sku: row.sku,
