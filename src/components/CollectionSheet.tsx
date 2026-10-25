@@ -233,7 +233,7 @@ export function CollectionSheet({
       </div>
       <p className="text-xs text-zinc-500">
         Tab between cells · edits save when you leave a cell · drag images onto
-        White BG / Model zones
+        White BG / Model zones (auto-compressed ~90% smaller on upload)
       </p>
     </div>
   );

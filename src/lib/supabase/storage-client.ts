@@ -1,5 +1,6 @@
 "use client";
 
+import { compressImageFile } from "@/lib/compress-image";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase/constants";
 
@@ -16,12 +17,15 @@ export async function uploadListingImageClient(
     throw new Error("Please choose an image file.");
   }
 
+  const compressed = await compressImageFile(file);
+  const uploadPath = objectPath.replace(/\.[^.]+$/, "") + ".jpg";
+
   const supabase = createSupabaseClient();
   const { error } = await supabase.storage
     .from(LISTING_IMAGES_BUCKET)
-    .upload(objectPath, file, {
+    .upload(uploadPath, compressed, {
       upsert: true,
-      contentType: file.type || "image/jpeg",
+      contentType: "image/jpeg",
     });
 
   if (error) {
@@ -35,6 +39,6 @@ export async function uploadListingImageClient(
 
   const {
     data: { publicUrl },
-  } = supabase.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(objectPath);
+  } = supabase.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(uploadPath);
   return publicUrl;
 }

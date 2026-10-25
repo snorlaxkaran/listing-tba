@@ -1,0 +1,16 @@
+---
+description: Push listing-tba changes to GitHub after completing work
+alwaysApply: true
+---
+
+# Git workflow (sample-listing-tracker)
+
+Remote: `https://github.com/snorlaxkaran/listing-tba.git` (branch `main`).
+
+After meaningful changes are implemented and build passes:
+
+1. `git add` relevant files (never commit `.env` or secrets).
+2. `git commit` with a clear message.
+3. `git push origin main` so Vercel deploys **listing-tba**.
+
+Do not ask whether to push unless the user says to hold off. Do not force-push `main`.
