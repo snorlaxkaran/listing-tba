@@ -8,14 +8,15 @@ Built with **Next.js** + **Supabase (Postgres)** + deployable on **Vercel**.
 
 1. Create a project at [supabase.com](https://supabase.com) (save the **database password**).
 2. In the Supabase dashboard: **Project Settings → Database → Connection string**.
-3. Copy two URIs into `.env` (copy from `.env.example` first):
+3. Copy the Postgres URI into `.env` as `DATABASE_URL` (copy from `.env.example` first):
 
    | Variable | Where in Supabase | Notes |
    |----------|-------------------|--------|
-   | `DATABASE_URL` | **Transaction** pooler, port **6543** | Append `?pgbouncer=true&connection_limit=1` if not already there |
-   | `DIRECT_URL` | **Session** pooler, port **5432** (or **Direct**) | Prisma migrations use this |
+   | `DATABASE_URL` | **Session** pooler, port **5432** (or **Direct**) | Use this for Prisma + the app |
 
    Replace `[YOUR-PASSWORD]` with your DB password. If the password has special characters, [URL-encode](https://developer.mozilla.org/en-US/docs/Glossary/Percent-encoding) them.
+
+   On **Vercel**, add the same `DATABASE_URL` (and your `NEXT_PUBLIC_SUPABASE_*` keys) under **Settings → Environment Variables**.
 
 4. Apply the schema to Supabase:
 
@@ -43,7 +44,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Deploy on Vercel (team use)
 
 1. Import the repo in Vercel.
-2. Add the same `DATABASE_URL` and `DIRECT_URL` in **Vercel → Settings → Environment Variables**.
+2. Add `DATABASE_URL` and `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in **Vercel → Environment Variables**.
 3. **Images:** add [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) and set `BLOB_READ_WRITE_TOKEN`, or later wire [Supabase Storage](https://supabase.com/docs/guides/storage).
 4. **Team login:** add [Supabase Auth](https://supabase.com/docs/guides/auth) or Clerk when you need access control.
 
