@@ -20,10 +20,12 @@ model SkuRow {
   collectionId         String
   collection           Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   sku                  String
-  samplesReceived         Int        @default(0)
-  givenForWhiteBgShoot    Int        @default(0)
-  givenForModelShoot      Int        @default(0)
-  factoryStock            Int        @default(0)
+  samplesReceived          Int     @default(0)
+  factoryStock             Int     @default(0)
+  whiteBgWithPhotoshoot    Boolean @default(false)
+  whiteBgPieceReturned     Boolean @default(false)
+  modelWithPhotoshoot      Boolean @default(false)
+  modelPieceReturned       Boolean @default(false)
   hasWhiteBgImages     Boolean    @default(false)
   whiteBgImageUrl      String?
   hasModelImages       Boolean    @default(false)

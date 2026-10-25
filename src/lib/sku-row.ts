@@ -3,9 +3,11 @@ import type { SkuRow } from "@prisma/client";
 export type SkuRowInput = {
   sku: string;
   samplesReceived: number;
-  givenForWhiteBgShoot: number;
-  givenForModelShoot: number;
   factoryStock: number;
+  whiteBgWithPhotoshoot: boolean;
+  whiteBgPieceReturned: boolean;
+  modelWithPhotoshoot: boolean;
+  modelPieceReturned: boolean;
   hasWhiteBgImages: boolean;
   hasModelImages: boolean;
   isLiveOnWebsite: boolean;
@@ -13,14 +15,43 @@ export type SkuRowInput = {
 };
 
 export function parseSkuRowBody(body: Record<string, unknown>): SkuRowInput {
+  const hasWhiteBgImages = Boolean(body.hasWhiteBgImages);
+  const hasModelImages = Boolean(body.hasModelImages);
+
+  let whiteBgWithPhotoshoot = Boolean(body.whiteBgWithPhotoshoot);
+  let whiteBgPieceReturned = Boolean(body.whiteBgPieceReturned);
+  let modelWithPhotoshoot = Boolean(body.modelWithPhotoshoot);
+  let modelPieceReturned = Boolean(body.modelPieceReturned);
+
+  if (whiteBgPieceReturned) {
+    whiteBgWithPhotoshoot = false;
+  }
+  if (modelPieceReturned) {
+    modelWithPhotoshoot = false;
+  }
+  if (whiteBgWithPhotoshoot) {
+    whiteBgPieceReturned = false;
+  }
+  if (modelWithPhotoshoot) {
+    modelPieceReturned = false;
+  }
+  if (!hasWhiteBgImages) {
+    whiteBgPieceReturned = false;
+  }
+  if (!hasModelImages) {
+    modelPieceReturned = false;
+  }
+
   return {
     sku: String(body.sku ?? "").trim(),
     samplesReceived: clampInt(body.samplesReceived, 0),
-    givenForWhiteBgShoot: clampInt(body.givenForWhiteBgShoot, 0),
-    givenForModelShoot: clampInt(body.givenForModelShoot, 0),
     factoryStock: clampInt(body.factoryStock, 0),
-    hasWhiteBgImages: Boolean(body.hasWhiteBgImages),
-    hasModelImages: Boolean(body.hasModelImages),
+    whiteBgWithPhotoshoot,
+    whiteBgPieceReturned,
+    modelWithPhotoshoot,
+    modelPieceReturned,
+    hasWhiteBgImages,
+    hasModelImages,
     isLiveOnWebsite: Boolean(body.isLiveOnWebsite),
     notLiveReason:
       body.notLiveReason === null || body.notLiveReason === undefined
@@ -40,9 +71,11 @@ export function serializeRow(row: SkuRow) {
     id: row.id,
     sku: row.sku,
     samplesReceived: row.samplesReceived,
-    givenForWhiteBgShoot: row.givenForWhiteBgShoot,
-    givenForModelShoot: row.givenForModelShoot,
     factoryStock: row.factoryStock,
+    whiteBgWithPhotoshoot: row.whiteBgWithPhotoshoot,
+    whiteBgPieceReturned: row.whiteBgPieceReturned,
+    modelWithPhotoshoot: row.modelWithPhotoshoot,
+    modelPieceReturned: row.modelPieceReturned,
     hasWhiteBgImages: row.hasWhiteBgImages,
     whiteBgImageUrl: row.whiteBgImageUrl,
     hasModelImages: row.hasModelImages,

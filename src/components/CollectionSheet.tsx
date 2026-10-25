@@ -2,16 +2,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ImageDropzone } from "@/components/ImageDropzone";
+import { SheetDashboard } from "@/components/SheetDashboard";
 import { sheetInputClass, sheetTableClass } from "@/components/sheet-styles";
+import { computeSheetStats } from "@/lib/sheet-stats";
 import { uploadListingImageClient } from "@/lib/supabase/storage-client";
 
 export type SheetRow = {
   id: string;
   sku: string;
   samplesReceived: number;
-  givenForWhiteBgShoot: number;
-  givenForModelShoot: number;
   factoryStock: number;
+  whiteBgWithPhotoshoot: boolean;
+  whiteBgPieceReturned: boolean;
+  modelWithPhotoshoot: boolean;
+  modelPieceReturned: boolean;
   hasWhiteBgImages: boolean;
   whiteBgImageUrl: string | null;
   hasModelImages: boolean;
@@ -141,16 +145,7 @@ export function CollectionSheet({
     window.location.href = `/api/collections/${collectionId}/export`;
   }
 
-  const totals = rows.reduce(
-    (acc, r) => {
-      acc.samples += r.samplesReceived;
-      acc.whiteShoot += r.givenForWhiteBgShoot;
-      acc.modelShoot += r.givenForModelShoot;
-      acc.stock += r.factoryStock;
-      return acc;
-    },
-    { samples: 0, whiteShoot: 0, modelShoot: 0, stock: 0 },
-  );
+  const stats = computeSheetStats(rows);
 
   return (
     <div className="space-y-4">
@@ -162,11 +157,6 @@ export function CollectionSheet({
           <h1 className="text-xl font-semibold text-zinc-900">
             {collectionName}
           </h1>
-          <p className="mt-0.5 text-xs text-zinc-600">
-            {rows.length} SKUs · {totals.samples} samples · {totals.whiteShoot}{" "}
-            pcs white shoot · {totals.modelShoot} pcs model shoot ·{" "}
-            {totals.stock} stock
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -186,6 +176,8 @@ export function CollectionSheet({
           </button>
         </div>
       </header>
+
+      <SheetDashboard stats={stats} title={`${collectionName} — overview`} />
 
       {error && (
         <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
@@ -238,8 +230,9 @@ export function CollectionSheet({
         </table>
       </div>
       <p className="text-xs text-zinc-500">
-        Tab between cells · edits save when you leave a cell · drag images onto
-        White BG / Model zones (auto-compressed ~90% smaller on upload)
+        Shoot flow: send <strong>1 pc</strong> → receive production images → mark{" "}
+        <strong>piece taken back</strong>. Tab between cells · images auto-compressed
+        ~90% on upload.
       </p>
     </div>
   );
@@ -312,9 +305,20 @@ function SheetRowEditor({
       </td>
       <td className="border-r border-zinc-100 px-1 py-0.5">
         <ShootCell
-          pieces={draft.givenForWhiteBgShoot}
-          onPieces={(v) => commit({ givenForWhiteBgShoot: v })}
-          piecesLabel="Pcs given"
+          withPhotoshoot={draft.whiteBgWithPhotoshoot}
+          pieceReturned={draft.whiteBgPieceReturned}
+          onWithPhotoshoot={(v) =>
+            commit({
+              whiteBgWithPhotoshoot: v,
+              whiteBgPieceReturned: v ? false : draft.whiteBgPieceReturned,
+            })
+          }
+          onPieceReturned={(v) =>
+            commit({
+              whiteBgPieceReturned: v,
+              whiteBgWithPhotoshoot: v ? false : draft.whiteBgWithPhotoshoot,
+            })
+          }
           hasImages={draft.hasWhiteBgImages}
           onHasImages={(v) => commit({ hasWhiteBgImages: v })}
           imageUrl={draft.whiteBgImageUrl}
@@ -325,9 +329,20 @@ function SheetRowEditor({
       </td>
       <td className="border-r border-zinc-100 px-1 py-0.5">
         <ShootCell
-          pieces={draft.givenForModelShoot}
-          onPieces={(v) => commit({ givenForModelShoot: v })}
-          piecesLabel="Pcs given"
+          withPhotoshoot={draft.modelWithPhotoshoot}
+          pieceReturned={draft.modelPieceReturned}
+          onWithPhotoshoot={(v) =>
+            commit({
+              modelWithPhotoshoot: v,
+              modelPieceReturned: v ? false : draft.modelPieceReturned,
+            })
+          }
+          onPieceReturned={(v) =>
+            commit({
+              modelPieceReturned: v,
+              modelWithPhotoshoot: v ? false : draft.modelWithPhotoshoot,
+            })
+          }
           hasImages={draft.hasModelImages}
           onHasImages={(v) => commit({ hasModelImages: v })}
           imageUrl={draft.modelImageUrl}
@@ -386,9 +401,10 @@ function SheetRowEditor({
 }
 
 function ShootCell({
-  pieces,
-  onPieces,
-  piecesLabel,
+  withPhotoshoot,
+  pieceReturned,
+  onWithPhotoshoot,
+  onPieceReturned,
   hasImages,
   onHasImages,
   imageUrl,
@@ -396,9 +412,10 @@ function ShootCell({
   onFile,
   dropLabel,
 }: {
-  pieces: number;
-  onPieces: (v: number) => void;
-  piecesLabel: string;
+  withPhotoshoot: boolean;
+  pieceReturned: boolean;
+  onWithPhotoshoot: (v: boolean) => void;
+  onPieceReturned: (v: boolean) => void;
   hasImages: boolean;
   onHasImages: (v: boolean) => void;
   imageUrl: string | null;
@@ -408,12 +425,16 @@ function ShootCell({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[10px] font-medium text-zinc-600">
-        {piecesLabel}
-        <NumInput value={pieces} onCommit={onPieces} />
+      <label className="flex items-center justify-between gap-1 text-[10px] text-zinc-700">
+        <span>1 pc with shoot</span>
+        <Toggle
+          checked={withPhotoshoot}
+          onChange={onWithPhotoshoot}
+          disabled={pieceReturned}
+        />
       </label>
       <div className="flex items-center justify-between gap-1">
-        <span className="text-[10px] text-zinc-600">Image received</span>
+        <span className="text-[10px] text-zinc-600">Images received</span>
         <Toggle checked={hasImages} onChange={onHasImages} />
       </div>
       {hasImages && (
@@ -424,6 +445,18 @@ function ShootCell({
           onFile={onFile}
         />
       )}
+      <label
+        className={`flex items-center justify-between gap-1 text-[10px] ${
+          hasImages ? "text-zinc-700" : "text-zinc-400"
+        }`}
+      >
+        <span>Piece taken back</span>
+        <Toggle
+          checked={pieceReturned}
+          onChange={onPieceReturned}
+          disabled={!hasImages}
+        />
+      </label>
     </div>
   );
 }
@@ -464,17 +497,20 @@ function NumInput({
 function Toggle({
   checked,
   onChange,
+  disabled,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full ${
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full disabled:cursor-not-allowed disabled:opacity-40 ${
         checked ? "bg-emerald-600" : "bg-zinc-400"
       }`}
     >
