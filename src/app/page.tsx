@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExcelImportForm } from "@/components/ExcelImportForm";
 import { NewCollectionForm } from "@/components/NewCollectionForm";
 import { SheetDashboard } from "@/components/SheetDashboard";
 import { prisma } from "@/lib/db";
@@ -36,6 +37,13 @@ export default async function HomePage() {
       </div>
 
       <SheetDashboard stats={globalStats} title="All collections — overview" />
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-medium text-zinc-800">
+          Import from Excel
+        </h2>
+        <ExcelImportForm />
+      </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-medium text-zinc-800">
