@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: Params) {
   const body = await request.json();
   const input = parseSkuRowBody(body);
   if (!input.sku) {
-    return NextResponse.json({ error: "SKU is required" }, { status: 400 });
+    input.sku = "SKU";
   }
 
   const count = await prisma.skuRow.count({ where: { collectionId } });

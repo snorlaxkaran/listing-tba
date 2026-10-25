@@ -38,7 +38,13 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const key = `${collectionId}/${rowId}/${kind}-${Date.now()}`;
-  const url = await storeImage(file, key);
+  let url: string;
+  try {
+    url = await storeImage(file, key);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   const updated = await prisma.skuRow.update({
     where: { id: rowId },

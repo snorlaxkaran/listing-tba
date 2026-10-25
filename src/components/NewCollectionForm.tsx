@@ -5,6 +5,7 @@ import {
   createCollectionAction,
   type CreateCollectionState,
 } from "@/app/actions/collections";
+import { sheetInputClass } from "@/components/sheet-styles";
 
 export function NewCollectionForm() {
   const [state, formAction, pending] = useActionState<
@@ -21,7 +22,7 @@ export function NewCollectionForm() {
         type="text"
         name="name"
         placeholder="New collection name (e.g. Summer 2026)"
-        className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        className={`${sheetInputClass} min-w-0 flex-1 rounded-lg py-2`}
         required
         disabled={pending}
       />
