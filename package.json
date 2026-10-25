@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "node scripts/ensure-supabase-storage.mjs && prisma generate && prisma migrate deploy && next build",
+    "storage:setup": "node scripts/ensure-supabase-storage.mjs",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

@@ -44,7 +44,7 @@ export async function storeImage(file: File, key: string): Promise<string> {
 
   if (process.env.VERCEL) {
     throw new Error(
-      "Image upload is not configured on Vercel. Add SUPABASE_SERVICE_ROLE_KEY (and Storage bucket listing-images) or BLOB_READ_WRITE_TOKEN.",
+      "Server upload is disabled on Vercel. Use drag-and-drop in the sheet (uploads go to Supabase Storage).",
     );
   }
 

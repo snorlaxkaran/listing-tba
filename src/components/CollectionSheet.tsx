@@ -116,28 +116,7 @@ export function CollectionSheet({
         : "jpg";
       const objectPath = `${collectionId}/${rowId}/${kind}-${Date.now()}.${ext}`;
 
-      let publicUrl: string;
-      try {
-        publicUrl = await uploadListingImageClient(file, objectPath);
-      } catch (clientErr) {
-        const form = new FormData();
-        form.set("kind", kind);
-        form.set("file", file);
-        const fallback = await fetch(
-          `/api/collections/${collectionId}/rows/${rowId}/upload`,
-          { method: "POST", body: form },
-        );
-        if (!fallback.ok) {
-          const data = await fallback.json().catch(() => ({}));
-          const msg =
-            data.error ??
-            (clientErr instanceof Error ? clientErr.message : "Upload failed");
-          throw new Error(msg);
-        }
-        const updated = (await fallback.json()) as SheetRow;
-        setRows((prev) => prev.map((r) => (r.id === rowId ? updated : r)));
-        return;
-      }
+      const publicUrl = await uploadListingImageClient(file, objectPath);
 
       const res = await fetch(
         `/api/collections/${collectionId}/rows/${rowId}/upload`,
