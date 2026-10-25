@@ -64,14 +64,15 @@ export async function parseStockImportWorkbook(
     );
   }
 
+  const lastRow = Math.max(sheet.rowCount, sheet.actualRowCount ?? 0);
   const rows: ExcelImportRow[] = [];
-  for (let r = 2; r <= sheet.rowCount; r++) {
+  for (let r = 2; r <= lastRow; r++) {
     const row = sheet.getRow(r);
     const sku = cellText(row.getCell(skuCol).value);
     const collectionName = cellText(row.getCell(collectionCol).value);
     const stockReceivedQty = cellQty(row.getCell(stockCol).value);
 
-    if (!sku && !collectionName) continue;
+    if (!sku && !collectionName && stockReceivedQty === 0) continue;
     if (!sku || !collectionName) {
       throw new Error(`Row ${r}: SKU and Collection Name are required.`);
     }

@@ -5,6 +5,8 @@ import {
   parseStockImportWorkbook,
 } from "@/lib/excel-import";
 
+export const maxDuration = 60;
+
 export async function GET() {
   const buffer = await buildStockImportTemplate();
   return new NextResponse(new Uint8Array(buffer), {
@@ -14,6 +16,29 @@ export async function GET() {
       "Content-Disposition": 'attachment; filename="stock-import-template.xlsx"',
     },
   });
+}
+
+async function resolveCollectionId(
+  name: string,
+  cache: Map<string, string>,
+): Promise<{ id: string; created: boolean }> {
+  const key = name.trim().toLowerCase();
+  const cached = cache.get(key);
+  if (cached) return { id: cached, created: false };
+
+  const existing = await prisma.collection.findFirst({
+    where: { name: { equals: name.trim(), mode: "insensitive" } },
+  });
+  if (existing) {
+    cache.set(key, existing.id);
+    return { id: existing.id, created: false };
+  }
+
+  const created = await prisma.collection.create({
+    data: { name: name.trim() },
+  });
+  cache.set(key, created.id);
+  return { id: created.id, created: true };
 }
 
 export async function POST(request: Request) {
@@ -45,46 +70,33 @@ export async function POST(request: Request) {
   let createdCollections = 0;
   let createdRows = 0;
   let updatedRows = 0;
+  const touchedCollections = new Set<string>();
 
-  await prisma.$transaction(async (tx) => {
+  try {
     for (const row of rows) {
-      const collectionKey = row.collectionName.toLowerCase();
-      let collectionId = collectionCache.get(collectionKey);
+      const { id: collectionId, created } = await resolveCollectionId(
+        row.collectionName,
+        collectionCache,
+      );
+      if (created) createdCollections += 1;
+      touchedCollections.add(collectionId);
 
-      if (!collectionId) {
-        const existing = await tx.collection.findFirst({
-          where: {
-            name: { equals: row.collectionName, mode: "insensitive" },
-          },
-        });
-        if (existing) {
-          collectionId = existing.id;
-        } else {
-          const created = await tx.collection.create({
-            data: { name: row.collectionName.trim() },
-          });
-          collectionId = created.id;
-          createdCollections += 1;
-        }
-        collectionCache.set(collectionKey, collectionId);
-      }
-
-      const existingSku = await tx.skuRow.findFirst({
+      const existingSku = await prisma.skuRow.findFirst({
         where: {
           collectionId,
-          sku: { equals: row.sku, mode: "insensitive" },
+          sku: { equals: row.sku.trim(), mode: "insensitive" },
         },
       });
 
       if (existingSku) {
-        await tx.skuRow.update({
+        await prisma.skuRow.update({
           where: { id: existingSku.id },
           data: { factoryStock: row.stockReceivedQty },
         });
         updatedRows += 1;
       } else {
-        const count = await tx.skuRow.count({ where: { collectionId } });
-        await tx.skuRow.create({
+        const count = await prisma.skuRow.count({ where: { collectionId } });
+        await prisma.skuRow.create({
           data: {
             collectionId,
             sku: row.sku.trim(),
@@ -94,13 +106,20 @@ export async function POST(request: Request) {
         });
         createdRows += 1;
       }
+    }
 
-      await tx.collection.update({
+    const now = new Date();
+    for (const collectionId of touchedCollections) {
+      await prisma.collection.update({
         where: { id: collectionId },
-        data: { updatedAt: new Date() },
+        data: { updatedAt: now },
       });
     }
-  });
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Import failed while saving rows.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({
     ok: true,

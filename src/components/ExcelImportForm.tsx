@@ -31,9 +31,17 @@ export function ExcelImportForm() {
         method: "POST",
         body,
       });
-      const data = await res.json().catch(() => ({}));
+      const text = await res.text();
+      let data: Record<string, unknown> = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(
+          res.ok ? "Import finished but response was invalid." : `Import failed (${res.status}).`,
+        );
+      }
       if (!res.ok) {
-        throw new Error(data.error ?? "Import failed");
+        throw new Error(String(data.error ?? `Import failed (${res.status}).`));
       }
       setMessage(
         `Imported ${data.rowsProcessed} row(s): ${data.createdRows} new SKU(s), ${data.updatedRows} updated, ${data.createdCollections} new collection(s).`,
