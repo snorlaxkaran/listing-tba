@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DeleteCollectionButton } from "@/components/DeleteCollectionButton";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { SheetDashboard } from "@/components/SheetDashboard";
 import { sheetInputClass, sheetTableClass } from "@/components/sheet-styles";
@@ -174,6 +175,12 @@ export function CollectionSheet({
           >
             Download Excel
           </button>
+          <DeleteCollectionButton
+            collectionId={collectionId}
+            collectionName={collectionName}
+            skuCount={rows.length}
+            redirectTo="/"
+          />
         </div>
       </header>
 

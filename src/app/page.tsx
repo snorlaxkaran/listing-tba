@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CollectionsList } from "@/components/CollectionsList";
 import { ExcelImportForm } from "@/components/ExcelImportForm";
 import { NewCollectionForm } from "@/components/NewCollectionForm";
 import { SheetDashboard } from "@/components/SheetDashboard";
@@ -54,28 +54,14 @@ export default async function HomePage() {
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-zinc-800">Collections</h2>
-        {collections.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No sheets yet. Create a collection to get started.
-          </p>
-        ) : (
-          <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white shadow-sm">
-            {collections.map((c) => (
-              <li key={c.id}>
-                <Link
-                  href={`/collections/${c.id}`}
-                  className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 hover:bg-zinc-50"
-                >
-                  <span className="font-medium">{c.name}</span>
-                  <span className="text-sm text-zinc-500">
-                    {c._count.rows} SKUs · updated{" "}
-                    {c.updatedAt.toLocaleDateString()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <CollectionsList
+          collections={collections.map((c) => ({
+            id: c.id,
+            name: c.name,
+            skuCount: c._count.rows,
+            updatedAtLabel: c.updatedAt.toLocaleDateString(),
+          }))}
+        />
       </section>
     </main>
   );

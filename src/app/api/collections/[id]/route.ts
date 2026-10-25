@@ -33,6 +33,10 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
+  const existing = await prisma.collection.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "Collection not found" }, { status: 404 });
+  }
   await prisma.collection.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
